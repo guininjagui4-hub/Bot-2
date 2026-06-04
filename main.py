@@ -24,8 +24,8 @@ async def on_ready():
     except Exception as e:
         print(f'❌ Erro ao sincronizar comandos: {e}')
     
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="você"))
-
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Dúvidas?"))
+await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Assina aqui tio paulo"))
 # Token do Discord
 TOKEN = os.getenv('DISCORD_TOKEN')
 
