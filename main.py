@@ -1,10 +1,16 @@
+# -*- coding: utf-8 -*-
 import os
 import random
 import discord
 from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
+import logging
 from datetime import datetime
+from typing import Union, Optional
+
+# Configuração básica de logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(name)s: %(message)s')
 
 # Carrega variáveis de ambiente (funciona local, ignorado no Railway)
 load_dotenv()
@@ -37,11 +43,11 @@ NIKITO_RESPONSES = {
 }
 
 # Helpers para evitar crash quando avatar é None
-def bot_avatar_url():
+def bot_avatar_url() -> Optional[str]:
     return bot.user.avatar.url if bot.user and bot.user.avatar else None
 
-def user_avatar_url(user: discord.User | discord.Member):
-    return user.avatar.url if user.avatar else None
+def user_avatar_url(user: Union[discord.User, discord.Member]) -> Optional[str]:
+    return user.avatar.url if user and user.avatar else None
 
 
 # ──────────────────────────────────────────
@@ -52,11 +58,11 @@ def user_avatar_url(user: discord.User | discord.Member):
 async def on_ready():
     """Evento quando o bot está pronto"""
     try:
-        synced = await bot.tree.sync()
-        print(f'✅ Bot {bot.user} conectado com sucesso!')
-        print(f'📋 {len(synced)} comandos sincronizados')
+        synced = await bot.tree.sync() # Sincroniza comandos globais
+        logging.info(f'✅ Bot {bot.user} conectado com sucesso!')
+        logging.info(f'📋 {len(synced)} comandos sincronizados')
     except Exception as e:
-        print(f'❌ Erro ao sincronizar comandos: {e}')
+        logging.error(f'❌ Erro ao sincronizar comandos: {e}')
 
     await bot.change_presence(
         activity=discord.Activity(type=discord.ActivityType.watching, name="Dúvidas?")
@@ -193,6 +199,7 @@ if __name__ == "__main__":
     TOKEN = os.getenv("DISCORD_TOKEN")
 
     if not TOKEN:
-        raise ValueError("❌ DISCORD_TOKEN não encontrado! Adicione a variável no Railway.")
+        logging.critical("❌ DISCORD_TOKEN não encontrado! Adicione a variável no Railway.")
+        raise ValueError("DISCORD_TOKEN não encontrado! O bot não pode iniciar sem ele.")
 
     bot.run(TOKEN)

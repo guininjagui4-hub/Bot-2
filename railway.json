@@ -5,7 +5,7 @@
   },
   "deploy": {
     "numReplicas": 1,
-    "startCommand": "python main.py",
+    "startCommand": "python3 main.py",
     "restartPolicyMaxRetries": 5
   }
 }
