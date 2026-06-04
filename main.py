@@ -1,6 +1,7 @@
 import os
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -11,6 +12,19 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='/', intents=intents)
+
+# Sincronizar comandos slash
+@bot.event
+async def on_ready():
+    """Evento quando o bot está pronto"""
+    try:
+        synced = await bot.tree.sync()
+        print(f'✅ Bot {bot.user} conectado com sucesso!')
+        print(f'📋 {len(synced)} comandos sincronizados')
+    except Exception as e:
+        print(f'❌ Erro ao sincronizar comandos: {e}')
+    
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="você"))
 
 # Token do Discord
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -35,32 +49,26 @@ HARLEY_RESPONSES = {
     ],
 }
 
-@bot.event
-async def on_ready():
-    """Evento quando o bot está pronto"""
-    print(f'✅ Bot {bot.user} conectado com sucesso!')
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="você"))
-
-@bot.command(name='falar', description='Harley fala para você!')
-async def falar(ctx):
+@bot.tree.command(name='falar', description='Harley fala para você!')
+async def falar(interaction: discord.Interaction):
     """Comando /falar - Harley responde com uma mensagem divertida"""
     import random
     
     embed = discord.Embed(
-        title="💕 Oi! É a Harley aqui!",
+        title="💕 Oi! É a Nikito aqui!",
         description=random.choice(HARLEY_RESPONSES["falar"]),
         color=HARLEY_PINK,
         timestamp=datetime.now()
     )
     
     embed.set_author(name="Harley Clark", icon_url=bot.user.avatar.url if bot.user.avatar else None)
-    embed.set_footer(text=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+    embed.set_footer(text=f"Pedido por {interaction.user.name}", icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
     embed.add_field(name="Status", value="✨ Pronta para conversar! ✨", inline=False)
     
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
-@bot.command(name='avatar', description='Veja o avatar da Harley!')
-async def avatar(ctx):
+@bot.tree.command(name='avatar', description='Veja o avatar da Harley!')
+async def avatar(interaction: discord.Interaction):
     """Comando /avatar - Mostra o avatar do bot"""
     import random
     
@@ -75,16 +83,14 @@ async def avatar(ctx):
         embed.set_image(url=bot.user.avatar.url)
     
     embed.set_author(name="Harley Clark", icon_url=bot.user.avatar.url if bot.user.avatar else None)
-    embed.set_footer(text=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+    embed.set_footer(text=f"Pedido por {interaction.user.name}", icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
     
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
-@bot.command(name='status', description='Muda meu status!')
-async def status(ctx, *, status_text=None):
+@bot.tree.command(name='status', description='Muda meu status!')
+@app_commands.describe(status_text="Novo status para o bot")
+async def status(interaction: discord.Interaction, status_text: str = "vivendo a melhor vida! 💕"):
     """Comando /status - Muda o status do bot"""
-    
-    if not status_text:
-        status_text = "vivendo a melhor vida! 💕"
     
     embed = discord.Embed(
         title="📊 Status Atualizado!",
@@ -94,16 +100,16 @@ async def status(ctx, *, status_text=None):
     )
     
     embed.set_author(name="Harley Clark", icon_url=bot.user.avatar.url if bot.user.avatar else None)
-    embed.add_field(name="👤 Atualizado por", value=ctx.author.name, inline=True)
-    embed.set_footer(text="Status mudou com sucesso!", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+    embed.add_field(name="👤 Atualizado por", value=interaction.user.name, inline=True)
+    embed.set_footer(text="Status mudou com sucesso!", icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
     
     # Muda o status do bot
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status_text))
     
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
-@bot.command(name='info', description='Informações sobre a Harley!')
-async def info(ctx):
+@bot.tree.command(name='info', description='Informações sobre a Harley!')
+async def info(interaction: discord.Interaction):
     """Comando /info - Mostra informações sobre o bot"""
     
     embed = discord.Embed(
@@ -119,12 +125,12 @@ async def info(ctx):
     embed.add_field(name="📢 Comandos", value="`/falar` • `/avatar` • `/status` • `/info`", inline=False)
     
     embed.set_author(name="Harley Clark", icon_url=bot.user.avatar.url if bot.user.avatar else None)
-    embed.set_footer(text=f"Pedido por {ctx.author.name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+    embed.set_footer(text=f"Pedido por {interaction.user.name}", icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
     
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
-@bot.event
-async def on_command_error(ctx, error):
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     """Trata erros de comando"""
     
     embed = discord.Embed(
@@ -137,7 +143,7 @@ async def on_command_error(ctx, error):
     embed.add_field(name="📝 Detalhes", value=str(error)[:1024], inline=False)
     embed.set_footer(text="Me desculpa! 😅")
     
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 # Inicia o bot
 if __name__ == "__main__":
